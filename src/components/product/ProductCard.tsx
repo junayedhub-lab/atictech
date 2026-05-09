@@ -1,10 +1,8 @@
 import { Link } from 'react-router-dom'
-import { ShoppingCart, Heart, Eye } from 'lucide-react'
+import { ShoppingCart, Eye } from 'lucide-react'
 import type { Product } from '@/types'
 import { formatPrice, getDiscountPercent } from '@/lib/utils'
 import { useCart } from '@/contexts/CartContext'
-import { useAuth } from '@/contexts/AuthContext'
-import { useNavigate } from 'react-router-dom'
 import StarRating from '@/components/ui/StarRating'
 import toast from 'react-hot-toast'
 
@@ -14,8 +12,6 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart()
-  const { user } = useAuth()
-  const navigate = useNavigate()
 
   const discount = product.discount_price
     ? getDiscountPercent(product.price, product.discount_price)
@@ -23,7 +19,6 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault()
-    if (!user) { navigate('/login'); return }
     await addToCart(product)
     toast.success('Added to cart!', { icon: '🛒' })
   }
@@ -62,17 +57,17 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Quick Actions Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4 gap-2">
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4 gap-2 pointer-events-none">
           <button
             onClick={handleAddToCart}
             disabled={product.stock === 0}
-            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg pointer-events-auto"
           >
             <ShoppingCart size={13} /> Add to Cart
           </button>
           <Link
             to={`/products/${product.slug}`}
-            className="p-2 bg-slate-800/90 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors"
+            className="p-2 bg-slate-800/90 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors pointer-events-auto"
           >
             <Eye size={13} />
           </Link>

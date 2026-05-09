@@ -51,13 +51,16 @@ export default function HomePage() {
   return (
     <>
       <Helmet>
-        <title>AtikTech — Bangladesh's Technology eCommerce Store</title>
-        <meta name="description" content="Shop the latest tech products at AtikTech. Fast delivery across Bangladesh, secure payments with bKash, Nagad & COD." />
+        <title>Atik Technology — Bangladesh's Technology eCommerce Store</title>
+        <meta name="description" content="Shop the latest tech products at Atik Technology. Fast delivery across Bangladesh, secure payments with bKash, Nagad & COD." />
       </Helmet>
 
       {/* Hero Banner */}
-      <section className="relative overflow-hidden min-h-[480px] md:min-h-[560px] flex items-center">
-        {currentBanner ? (
+      <section className="relative overflow-hidden min-h-[480px] md:min-h-[560px] flex items-center bg-slate-900">
+        {loading ? (
+          /* Initial loading state placeholder */
+          <div className="absolute inset-0 bg-slate-950 animate-pulse" />
+        ) : currentBanner ? (
           <>
             <img
               src={currentBanner.image_url}

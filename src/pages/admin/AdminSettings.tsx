@@ -37,7 +37,7 @@ export default function AdminSettings() {
       icon: Globe,
       title: 'Website',
       fields: [
-        { key: 'site_name', label: 'Site Name', placeholder: 'AtikTech' },
+        { key: 'site_name', label: 'Site Name', placeholder: 'Atik Technology' },
         { key: 'site_tagline', label: 'Tagline', placeholder: 'Bangladesh\'s Tech Store' },
         { key: 'logo_url', label: 'Logo URL', placeholder: 'https://…' },
       ]
@@ -47,7 +47,7 @@ export default function AdminSettings() {
       title: 'Contact',
       fields: [
         { key: 'contact_phone', label: 'Phone', placeholder: '+880 1XXX-XXXXXX' },
-        { key: 'contact_email', label: 'Email', placeholder: 'info@atiktech.com' },
+        { key: 'contact_email', label: 'Email', placeholder: 'atikahmed680@gmail.com' },
         { key: 'contact_address', label: 'Address', placeholder: 'Dhaka, Bangladesh' },
       ]
     },

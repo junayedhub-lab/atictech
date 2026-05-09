@@ -54,7 +54,7 @@ export default function DynamicPage() {
   return (
     <>
       <Helmet>
-        <title>{page.title} — AtikTech</title>
+        <title>{page.title} — Atik Technology</title>
         {page.meta_description && <meta name="description" content={page.meta_description} />}
       </Helmet>
 

@@ -6,6 +6,7 @@ import { useCart } from '@/contexts/CartContext'
 import { supabase } from '@/lib/supabase'
 import type { Product } from '@/types'
 import { cn } from '@/lib/utils'
+import logo from '@/assets/logo.png'
 
 export default function Navbar() {
   const { user, profile, signOut, isAdmin } = useAuth()
@@ -68,6 +69,7 @@ export default function Navbar() {
     { label: 'Home', to: '/' },
     { label: 'Products', to: '/products' },
     { label: 'Categories', to: '/categories' },
+    { label: 'Track Order', to: '/track-order' },
   ]
 
   return (
@@ -79,11 +81,9 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-orange-500 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-              <span className="text-white font-black text-sm">A</span>
-            </div>
+            <img src={logo} alt="Atik Technology" className="w-9 h-9 object-contain group-hover:scale-110 transition-transform" />
             <span className="font-display font-bold text-lg text-white">
-              Atik<span className="text-blue-400">Tech</span>
+              Atik <span className="text-blue-400">Technology</span>
             </span>
           </Link>
 
@@ -256,6 +256,15 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              to="/track-order"
+              className={cn(
+                'block px-4 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                location.pathname === '/track-order' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              )}
+            >
+              Track Order
+            </Link>
             {!user && (
               <Link to="/login" className="block px-4 py-2.5 mt-2 bg-blue-600 text-white rounded-xl text-sm font-medium text-center">
                 Sign In

@@ -47,7 +47,7 @@ export default function AccountPage() {
 
   return (
     <>
-      <Helmet><title>My Account — AtikTech</title></Helmet>
+      <Helmet><title>My Account — Atik Technology</title></Helmet>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
         <h1 className="text-2xl font-display font-bold text-white mb-8 flex items-center gap-3">
           <User className="text-blue-400" size={24} /> My Account

@@ -1,30 +1,17 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react'
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, User } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatPrice } from '@/lib/utils'
 import { Helmet } from 'react-helmet-async'
 import Button from '@/components/ui/Button'
 
-export default function CartPage() {
+function CartPageContent() {
   const { items, itemCount, total, removeFromCart, updateQuantity } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()
 
   const DELIVERY_CHARGE = 80
-
-  if (!user) {
-    return (
-      <div className="max-w-lg mx-auto px-4 py-24 text-center">
-        <div className="text-6xl mb-4">🔐</div>
-        <h1 className="text-2xl font-display font-bold text-white mb-3">Sign in to view cart</h1>
-        <p className="text-slate-400 mb-6">Please sign in to access your shopping cart.</p>
-        <Link to="/login" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-medium transition-colors">
-          Sign In
-        </Link>
-      </div>
-    )
-  }
 
   if (items.length === 0) {
     return (
@@ -42,21 +29,37 @@ export default function CartPage() {
   return (
     <>
       <Helmet>
-        <title>Cart ({itemCount}) — AtikTech</title>
+        <title>{`Cart (${itemCount}) — Atik Technology`}</title>
       </Helmet>
 
       <div className="container-wide py-10">
-        <h1 className="text-2xl font-display font-bold text-white mb-8 flex items-center gap-3">
+        <h1 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-3">
           <ShoppingBag className="text-blue-400" size={26} />
           Shopping Cart
           <span className="text-lg font-normal text-slate-400">({itemCount} items)</span>
         </h1>
 
+        {/* Guest notice */}
+        {!user && (
+          <div className="mb-6 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
+            <User size={16} className="text-amber-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm text-amber-200 font-medium">Shopping as Guest</p>
+              <p className="text-xs text-amber-300/70 mt-0.5">
+                Your cart is saved in this browser.{' '}
+                <Link to="/login" className="underline hover:text-white">Sign in</Link>
+                {' '}to save your cart across devices. You can still checkout without signing in.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {items.map(item => {
-              const product = item.product!
+              const product = item.product
+              if (!product) return null
               const price = product.discount_price ?? product.price
               return (
                 <div key={item.id} className="flex gap-4 bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 hover:border-slate-600 transition-all group">
@@ -156,5 +159,25 @@ export default function CartPage() {
         </div>
       </div>
     </>
+  )
+}
+
+import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
+
+function ErrorFallback({ error }: FallbackProps) {
+  return (
+    <div className="max-w-lg mx-auto px-4 py-24 text-center">
+      <div className="text-6xl mb-4">🚨</div>
+      <h1 className="text-2xl font-display font-bold text-red-500 mb-3">Cart Error</h1>
+      <p className="text-slate-400 mb-6 font-mono text-sm break-all">{(error as any)?.message || 'Something went wrong'}</p>
+    </div>
+  )
+}
+
+export default function CartPage() {
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <CartPageContent />
+    </ErrorBoundary>
   )
 }

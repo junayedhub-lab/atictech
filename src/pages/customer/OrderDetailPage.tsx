@@ -6,6 +6,10 @@ import type { Order } from '@/types'
 import { formatPrice, getOrderStatusColor } from '@/lib/utils'
 import { Helmet } from 'react-helmet-async'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { Star, MessageSquarePlus, X } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import Button from '@/components/ui/Button'
+import toast from 'react-hot-toast'
 
 const statusIcons: Record<string, React.ReactNode> = {
   pending: <Clock size={18} />,
@@ -17,21 +21,74 @@ const statusIcons: Record<string, React.ReactNode> = {
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const { user } = useAuth()
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
+  
+  // Review Modal State
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<{id: string, name: string} | null>(null)
+  const [rating, setRating] = useState(5)
+  const [comment, setComment] = useState('')
+  const [submittingReview, setSubmittingReview] = useState(false)
+  const [existingReviews, setExistingReviews] = useState<string[]>([]) // Array of product IDs reviewed in this order
 
-  useEffect(() => {
+  const fetchOrder = async () => {
     if (!id) return
-    supabase
+    const { data } = await supabase
       .from('orders')
       .select('*, items:order_items(*, product:products(name, images, price, discount_price))')
       .eq('id', id)
       .single()
-      .then(({ data }) => {
-        setOrder(data)
-        setLoading(false)
-      })
+    
+    if (data) {
+      setOrder(data)
+      // If delivered, fetch existing reviews for this order
+      if (data.status === 'delivered') {
+        const { data: reviews } = await supabase
+          .from('reviews')
+          .select('product_id')
+          .eq('order_id', id)
+        
+        if (reviews) setExistingReviews(reviews.map(r => r.product_id))
+      }
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    fetchOrder()
   }, [id])
+
+  const handleSubmitReview = async () => {
+    if (!user || !selectedProduct || !id) return
+    if (!comment.trim()) return toast.error('Please write a comment')
+
+    setSubmittingReview(true)
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .insert({
+          product_id: selectedProduct.id,
+          order_id: id,
+          user_id: user.id,
+          rating,
+          comment: comment.trim()
+        })
+
+      if (error) throw error
+
+      toast.success('Review submitted successfully!')
+      setExistingReviews([...existingReviews, selectedProduct.id])
+      setShowReviewModal(false)
+      setComment('')
+      setRating(5)
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to submit review')
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -57,7 +114,7 @@ export default function OrderDetailPage() {
 
   return (
     <>
-      <Helmet><title>Order #{order.id.slice(0, 8).toUpperCase()} — AtikTech</title></Helmet>
+      <Helmet><title>Order #{order.id.slice(0, 8).toUpperCase()} — Atik Technology</title></Helmet>
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <Link to="/account/orders" className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white transition-colors mb-6">
@@ -95,9 +152,30 @@ export default function OrderDetailPage() {
                       <p className="text-sm font-medium text-white line-clamp-1">{(item.product as any)?.name}</p>
                       <p className="text-xs text-slate-400 mt-1">Unit Price: {formatPrice(item.price)}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-white">{formatPrice(item.price * item.quantity)}</p>
-                      <p className="text-xs text-slate-500 mt-1">Qty: {item.quantity}</p>
+                    <div className="text-right flex flex-col items-end gap-2">
+                      <div>
+                        <p className="text-sm font-semibold text-white">{formatPrice(item.price * item.quantity)}</p>
+                        <p className="text-xs text-slate-500 mt-1">Qty: {item.quantity}</p>
+                      </div>
+                      
+                      {/* Review Button */}
+                      {order.status === 'delivered' && (
+                        existingReviews.includes(item.product_id) ? (
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded-lg uppercase tracking-wider">
+                            <Star size={10} fill="currentColor" /> Reviewed
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setSelectedProduct({ id: item.product_id, name: (item.product as any)?.name || 'Product' })
+                              setShowReviewModal(true)
+                            }}
+                            className="flex items-center gap-1.5 text-[10px] font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg transition-all uppercase tracking-wider border border-blue-500/20"
+                          >
+                            <MessageSquarePlus size={12} /> Write Review
+                          </button>
+                        )
+                      )}
                     </div>
                   </div>
                 ))}
@@ -177,6 +255,73 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+              <h3 className="text-xl font-display font-bold text-white">Rate Product</h3>
+              <button onClick={() => setShowReviewModal(false)} className="text-slate-500 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div className="text-center">
+                <p className="text-sm text-slate-400 mb-2">How would you rate</p>
+                <p className="font-semibold text-white line-clamp-1">{selectedProduct?.name}</p>
+              </div>
+
+              {/* Star Rating */}
+              <div className="flex justify-center gap-2">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    onClick={() => setRating(star)}
+                    className="transition-transform active:scale-90"
+                  >
+                    <Star
+                      size={32}
+                      className={star <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-slate-700'}
+                    />
+                  </button>
+                ))}
+              </div>
+
+              {/* Comment Box */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Your Review</label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  rows={4}
+                  className="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all resize-none"
+                  placeholder="Tell us what you liked or didn't like..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  variant="outline" 
+                  fullWidth 
+                  onClick={() => setShowReviewModal(false)}
+                  disabled={submittingReview}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  fullWidth 
+                  onClick={handleSubmitReview}
+                  loading={submittingReview}
+                >
+                  Submit Review
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

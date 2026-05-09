@@ -108,8 +108,8 @@ export default function AdminCategories() {
             />
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-slate-300">Description</label>
-              <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder="Optional description…"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+              <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} placeholder="Optional description…"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 resize-y min-h-[80px] focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
             </div>
             <Button onClick={save} loading={saving} fullWidth>{editId ? 'Save' : 'Create'}</Button>
           </div>

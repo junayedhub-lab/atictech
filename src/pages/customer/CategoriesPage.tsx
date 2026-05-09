@@ -25,8 +25,8 @@ export default function CategoriesPage() {
   return (
     <>
       <Helmet>
-        <title>All Categories — AtikTech</title>
-        <meta name="description" content="Browse all product categories on AtikTech." />
+        <title>All Categories — Atik Technology</title>
+        <meta name="description" content="Browse all product categories on Atik Technology." />
       </Helmet>
 
       <div className="container-wide py-12">

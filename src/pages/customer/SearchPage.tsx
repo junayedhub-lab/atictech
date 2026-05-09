@@ -19,7 +19,7 @@ export default function SearchPage() {
     supabase
       .from('products')
       .select('*, category:categories(*)')
-      .ilike('name', `%${q}%`)
+      .or(`name.ilike.%${q}%,description.ilike.%${q}%,tags.cs.{${q}}`)
       .limit(48)
       .then(({ data }) => { setProducts(data || []); setLoading(false) })
   }, [q])
@@ -27,7 +27,7 @@ export default function SearchPage() {
   return (
     <>
       <Helmet>
-        <title>Search: {q} — AtikTech</title>
+        <title>Search results for "{q}" — Atik Technology</title>
       </Helmet>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="mb-8">

@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 
 const emptyForm = {
   name: '', slug: '', description: '', price: '', discount_price: '',
-  stock: '', category_id: '', is_featured: false, is_trending: false,
+  stock: '', category_id: '', tags: '', is_featured: false, is_trending: false,
 }
 
 export default function AdminProducts() {
@@ -54,6 +54,7 @@ export default function AdminProducts() {
         description: product.description, price: String(product.price),
         discount_price: product.discount_price ? String(product.discount_price) : '',
         stock: String(product.stock), category_id: product.category_id,
+        tags: product.tags?.join(', ') || '',
         is_featured: product.is_featured, is_trending: product.is_trending,
       })
       setImages(product.images || [])
@@ -99,17 +100,18 @@ export default function AdminProducts() {
       stock: Number(form.stock),
       category_id: form.category_id,
       images,
+      tags: (form as any).tags.split(',').map((t: string) => t.trim()).filter(Boolean),
       is_featured: form.is_featured,
       is_trending: form.is_trending,
     }
 
     if (editId) {
       const { error } = await supabase.from('products').update(payload).eq('id', editId)
-      if (error) { toast.error('Update failed'); setSaving(false); return }
+      if (error) { toast.error(`Update failed: ${error.message}`); setSaving(false); return }
       toast.success('Product updated!')
     } else {
       const { error } = await supabase.from('products').insert(payload)
-      if (error) { toast.error('Create failed'); setSaving(false); return }
+      if (error) { toast.error(`Create failed: ${error.message}`); setSaving(false); return }
       toast.success('Product created!')
     }
     setModalOpen(false)
@@ -242,9 +244,9 @@ export default function AdminProducts() {
                 <textarea
                   value={form.description}
                   onChange={set('description')}
-                  rows={3}
+                  rows={5}
                   placeholder="Product description…"
-                  className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                  className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
                 />
               </div>
 
@@ -261,6 +263,14 @@ export default function AdminProducts() {
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
+
+              <Input 
+                id="tags" 
+                label="Tags (comma separated)" 
+                value={(form as any).tags} 
+                onChange={set('tags')} 
+                placeholder="e.g. gaming, laptop, accessories" 
+              />
 
               <div className="flex gap-6">
                 <label className="flex items-center gap-2 cursor-pointer">

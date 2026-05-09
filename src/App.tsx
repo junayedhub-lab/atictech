@@ -9,6 +9,7 @@ import { SettingsProvider } from '@/contexts/SettingsContext'
 import CustomerLayout from '@/components/layout/CustomerLayout'
 import AdminLayout from '@/components/layout/AdminLayout'
 import { ProtectedRoute, AdminRoute, GuestRoute } from '@/components/layout/ProtectedRoute'
+import ScrollToTop from '@/components/layout/ScrollToTop'
 
 // Customer Pages
 import HomePage from '@/pages/customer/HomePage'
@@ -23,6 +24,7 @@ import SearchPage from '@/pages/customer/SearchPage'
 import DynamicPage from '@/pages/customer/DynamicPage'
 import OrderDetailPage from '@/pages/customer/OrderDetailPage'
 import CategoriesPage from '@/pages/customer/CategoriesPage'
+import OrderTrackingPage from '@/pages/customer/OrderTrackingPage'
 
 // Auth Pages
 import LoginPage from '@/pages/auth/LoginPage'
@@ -67,6 +69,8 @@ export default function App() {
               }}
             />
 
+            <ScrollToTop />
+
             <Routes>
               {/* Customer routes */}
               <Route element={<CustomerLayout />}>
@@ -77,9 +81,12 @@ export default function App() {
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/categories" element={<CategoriesPage />} />
 
+                {/* Public routes (guests allowed) */}
+                <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/order-success/:id" element={<OrderSuccessPage />} />
+                <Route path="/track-order" element={<OrderTrackingPage />} />
+
                 {/* Protected customer routes */}
-                <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
-                <Route path="/order-success/:id" element={<ProtectedRoute><OrderSuccessPage /></ProtectedRoute>} />
                 <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
                 <Route path="/account/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
                 <Route path="/account/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />

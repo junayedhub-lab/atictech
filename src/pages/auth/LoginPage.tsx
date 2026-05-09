@@ -6,6 +6,7 @@ import { Helmet } from 'react-helmet-async'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import toast from 'react-hot-toast'
+import logo from '@/assets/logo.png'
 
 export default function LoginPage() {
   const { signIn } = useAuth()
@@ -42,7 +43,7 @@ export default function LoginPage() {
   return (
     <>
       <Helmet>
-        <title>Sign In — AtikTech</title>
+        <title>Sign In — Atik Technology</title>
       </Helmet>
 
       <div className="min-h-screen flex items-center justify-center px-4 py-16 bg-slate-950">
@@ -56,11 +57,9 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="text-center mb-8">
             <Link to="/" className="inline-flex items-center gap-2 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-black text-lg">A</span>
-              </div>
+              <img src={logo} alt="Atik Technology" className="w-10 h-10 object-contain" />
               <span className="font-display font-bold text-xl text-white">
-                Atik<span className="text-blue-400">Tech</span>
+                Atik <span className="text-blue-400">Technology</span>
               </span>
             </Link>
             <h1 className="text-2xl font-display font-bold text-white mt-6 mb-1">Welcome back</h1>

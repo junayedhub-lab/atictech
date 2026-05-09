@@ -1,11 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useSearchParams, Link, useNavigate } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { SlidersHorizontal, Grid, List, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { Product, Category } from '@/types'
 import ProductCard from '@/components/product/ProductCard'
 import { useCart } from '@/contexts/CartContext'
-import { useAuth } from '@/contexts/AuthContext'
 import { SkeletonGrid } from '@/components/ui/Skeleton'
 import { Helmet } from 'react-helmet-async'
 import { cn } from '@/lib/utils'
@@ -73,8 +72,8 @@ export default function ProductsPage() {
   return (
     <>
       <Helmet>
-        <title>Products — AtikTech</title>
-        <meta name="description" content="Browse all tech products on AtikTech. Filter by category, price range, and more." />
+        <title>Products — Atik Technology</title>
+        <meta name="description" content="Browse all tech products on Atik Technology. Filter by category, price range, and more." />
       </Helmet>
 
       <div className="container-wide py-8">
@@ -282,8 +281,6 @@ function FiltersPanel({ categories, categorySlug, minPrice, maxPrice, setParam, 
 
 function ProductListItem({ product }: { product: Product }) {
   const { addToCart } = useCart()
-  const { user } = useAuth()
-  const navigate = useNavigate()
   const discount = product.discount_price ? Math.round(((product.price - product.discount_price) / product.price) * 100) : 0
 
   return (
@@ -304,7 +301,7 @@ function ProductListItem({ product }: { product: Product }) {
             {discount > 0 && <span className="text-xs text-orange-400 font-medium">-{discount}%</span>}
           </div>
           <button
-            onClick={async () => { if (!user) { navigate('/login'); return }; await addToCart(product); }}
+            onClick={async () => { await addToCart(product) }}
             disabled={product.stock === 0}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
           >

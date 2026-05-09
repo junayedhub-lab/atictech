@@ -27,9 +27,6 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const [addingToCart, setAddingToCart] = useState(false)
   const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description')
-  const [reviewText, setReviewText] = useState('')
-  const [reviewRating, setReviewRating] = useState(5)
-  const [submittingReview, setSubmittingReview] = useState(false)
 
   useEffect(() => {
     if (!slug) return
@@ -51,6 +48,11 @@ export default function ProductDetailPage() {
         supabase.from('products').select('*, category:categories(*)').eq('category_id', p.category_id).neq('id', p.id).limit(4),
         supabase.from('reviews').select('*, profile:profiles(full_name, avatar_url)').eq('product_id', p.id).order('created_at', { ascending: false }),
       ])
+      
+      if (reviewsRes.error) {
+        console.error('Review fetch error:', reviewsRes.error)
+      }
+      
       setRelated(relatedRes.data || [])
       setReviews(reviewsRes.data || [])
       setLoading(false)
@@ -59,7 +61,6 @@ export default function ProductDetailPage() {
   }, [slug, navigate])
 
   const handleAddToCart = async () => {
-    if (!user) { navigate('/login'); return }
     if (!product) return
     setAddingToCart(true)
     await addToCart(product, quantity)
@@ -68,29 +69,12 @@ export default function ProductDetailPage() {
   }
 
   const handleBuyNow = async () => {
-    if (!user) { navigate('/login'); return }
     if (!product) return
     await addToCart(product, quantity)
     navigate('/checkout')
   }
 
-  const submitReview = async () => {
-    if (!user || !product) return
-    setSubmittingReview(true)
-    const { data, error } = await supabase.from('reviews').insert({
-      product_id: product.id,
-      user_id: user.id,
-      rating: reviewRating,
-      comment: reviewText,
-    }).select('*, profile:profiles(full_name, avatar_url)').single()
-    if (!error && data) {
-      setReviews(prev => [data, ...prev])
-      setReviewText('')
-      setReviewRating(5)
-      toast.success('Review submitted!')
-    }
-    setSubmittingReview(false)
-  }
+
 
   if (loading) return <ProductDetailSkeleton />
   if (!product) return null
@@ -101,7 +85,7 @@ export default function ProductDetailPage() {
   return (
     <>
       <Helmet>
-        <title>{product.name} — AtikTech</title>
+        <title>{product.name} — Atik Technology</title>
         <meta name="description" content={product.description?.slice(0, 160)} />
       </Helmet>
 
@@ -266,13 +250,18 @@ export default function ProductDetailPage() {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={cn(
-                  'px-6 py-3 text-sm font-medium capitalize transition-all border-b-2 -mb-px',
+                  'px-6 py-3 text-sm font-medium capitalize transition-all border-b-2 -mb-px relative',
                   activeTab === tab
-                    ? 'border-blue-500 text-blue-400'
+                    ? 'border-blue-500 text-blue-400 bg-blue-500/5'
                     : 'border-transparent text-slate-400 hover:text-slate-200'
                 )}
               >
-                {tab} {tab === 'reviews' && `(${reviews.length})`}
+                {tab} 
+                {tab === 'reviews' && reviews.length > 0 && (
+                  <span className="ml-2 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                    {reviews.length}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -283,48 +272,33 @@ export default function ProductDetailPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Write a review */}
-              {user ? (
-                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 space-y-4">
-                  <h3 className="font-semibold text-white">Write a Review</h3>
-                  <div>
-                    <p className="text-sm text-slate-400 mb-2">Your rating</p>
-                    <StarRating rating={reviewRating} size={24} interactive onChange={setReviewRating} />
-                  </div>
-                  <textarea
-                    value={reviewText}
-                    onChange={e => setReviewText(e.target.value)}
-                    placeholder="Share your experience with this product…"
-                    rows={3}
-                    className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
-                  />
-                  <button
-                    onClick={submitReview}
-                    disabled={!reviewText.trim() || submittingReview}
-                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
-                  >
-                    {submittingReview ? 'Submitting…' : 'Submit Review'}
-                  </button>
+              {/* Review Policy Notice */}
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5 flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
+                  <Package size={20} className="text-blue-400" />
                 </div>
-              ) : (
-                <div className="text-center py-6 bg-slate-800/30 rounded-2xl border border-slate-700/30">
-                  <p className="text-slate-400 text-sm">
-                    <Link to="/login" className="text-blue-400 hover:underline">Sign in</Link> to write a review
+                <div>
+                  <h4 className="text-sm font-semibold text-white mb-1">Verified Purchases Only</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    To ensure authentic feedback, only customers who have purchased this product can leave a review. 
+                    If you've bought this, go to <Link to="/account/orders" className="text-blue-400 hover:underline">My Orders</Link> to share your experience.
                   </p>
                 </div>
-              )}
+              </div>
 
               {/* Reviews list */}
               {reviews.length === 0 ? (
                 <p className="text-slate-500 text-center py-8">No reviews yet. Be the first!</p>
               ) : reviews.map(review => (
                 <div key={review.id} className="flex gap-4 pb-5 border-b border-slate-800 last:border-0">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
-                    {(review.profile as any)?.full_name?.[0]?.toUpperCase() || 'U'}
+                  <div className="w-10 h-10 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-sm font-bold text-blue-400 shrink-0 shadow-inner">
+                    {(review as any).full_name?.[0]?.toUpperCase() || (review.profile as any)?.full_name?.[0]?.toUpperCase() || 'U'}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="text-sm font-medium text-slate-200">{(review.profile as any)?.full_name || 'Anonymous'}</p>
+                      <p className="text-sm font-semibold text-white">
+                        {(review as any).full_name || (review.profile as any)?.full_name || 'Verified Customer'}
+                      </p>
                       <StarRating rating={review.rating} size={12} />
                     </div>
                     <p className="text-sm text-slate-400 leading-relaxed">{review.comment}</p>

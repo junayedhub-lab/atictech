@@ -32,6 +32,7 @@ export interface Product {
   images: string[]
   is_featured: boolean
   is_trending: boolean
+  tags?: string[]
   rating_avg?: number
   rating_count?: number
   created_at: string
@@ -52,7 +53,8 @@ export type PaymentStatus = 'pending' | 'approved' | 'rejected'
 
 export interface Order {
   id: string
-  user_id: string
+  user_id: string | null   // null for guest orders
+  customer_name?: string   // for guest orders (no profile)
   profile?: Profile
   status: OrderStatus
   payment_method: PaymentMethod
@@ -74,11 +76,13 @@ export interface OrderItem {
   product?: Product
   quantity: number
   price: number
+  is_reviewed?: boolean // Temporary field for UI
 }
 
 export interface Review {
   id: string
   product_id: string
+  order_id?: string // Link review to a specific order
   user_id: string
   profile?: Profile
   rating: number

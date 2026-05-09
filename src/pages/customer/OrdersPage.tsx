@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Package, Clock, CheckCircle, Truck, XCircle, ChevronRight } from 'lucide-react'
+import { Package, Clock, CheckCircle, Truck, XCircle, ChevronRight, MessageSquarePlus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Order } from '@/types'
@@ -37,7 +37,7 @@ export default function OrdersPage() {
 
   return (
     <>
-      <Helmet><title>My Orders — AtikTech</title></Helmet>
+      <Helmet><title>My Orders — Atik Technology</title></Helmet>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <h1 className="text-2xl font-display font-bold text-white mb-8 flex items-center gap-3">
           <Package className="text-blue-400" size={24} /> My Orders
@@ -100,9 +100,14 @@ export default function OrdersPage() {
                     <span>·</span>
                     <span className="uppercase font-medium">{order.payment_method}</span>
                   </div>
-                  <span className="font-semibold text-white">
+                  <div className="flex items-center gap-3 font-semibold text-white">
+                    {order.status === 'delivered' && (
+                      <span className="flex items-center gap-1 text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+                        <MessageSquarePlus size={10} /> Review Available
+                      </span>
+                    )}
                     {formatPrice(order.total + order.delivery_charge)}
-                  </span>
+                  </div>
                 </div>
               </Link>
             ))}

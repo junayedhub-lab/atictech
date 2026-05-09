@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
+import logo from '@/assets/logo.png'
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', to: '/admin' },
@@ -85,10 +86,8 @@ function SidebarContent({ navItems, profile, onSignOut, onClose }: any) {
       {/* Logo */}
       <div className="h-14 flex items-center justify-between px-5 border-b border-slate-800">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-orange-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-black text-sm">A</span>
-          </div>
-          <span className="font-display font-bold text-white">Admin Panel</span>
+          <img src={logo} alt="Atik Technology" className="w-7 h-7 object-contain" />
+          <span className="font-display font-bold text-white">Atik Technology Admin</span>
         </div>
         {onClose && (
           <button onClick={onClose} className="text-slate-400 hover:text-white lg:hidden">

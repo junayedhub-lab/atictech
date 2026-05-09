@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CreditCard, Phone, MapPin, User, FileText, CheckCircle } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
@@ -11,13 +11,20 @@ import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
+import { useSettings } from '@/contexts/SettingsContext'
 
-const DELIVERY_CHARGE = 80
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const { items, total, clearCart } = useCart()
   const { user, profile } = useAuth()
+  const { getSetting } = useSettings()
   const navigate = useNavigate()
+
+  // Dynamic settings from admin panel
+  const bkashNumber   = getSetting('bkash_number',          '01XXXXXXXXX')
+  const nagadNumber   = getSetting('nagad_number',           '01XXXXXXXXX')
+  const chargeDhaka   = Number(getSetting('delivery_charge_dhaka',   '80'))
+  const chargeOutside = Number(getSetting('delivery_charge_outside', '120'))
 
   const [form, setForm] = useState({
     full_name: profile?.full_name || '',
@@ -26,9 +33,14 @@ export default function CheckoutPage() {
     notes: '',
   })
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod')
+  const [deliveryZone, setDeliveryZone] = useState<'dhaka' | 'outside'>('dhaka')
   const [transactionId, setTransactionId] = useState('')
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  // Ref to prevent redirect-to-cart after order is placed and cart is cleared
+  const orderJustPlaced = useRef(false)
+
+  const DELIVERY_CHARGE = deliveryZone === 'dhaka' ? chargeDhaka : chargeOutside
 
   const validate = () => {
     const e: Record<string, string> = {}
@@ -39,23 +51,29 @@ export default function CheckoutPage() {
       e.transactionId = 'Transaction ID is required for this payment method'
     }
     setErrors(e)
-    return Object.keys(e).length === 0
+    
+    if (Object.keys(e).length > 0) {
+      toast.error('Please fill in all required fields.')
+      return false
+    }
+    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validate() || !user) return
+    if (!validate()) return
     setLoading(true)
 
     try {
-      // Create order
+      // Create order — user_id is null for guests
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
-          user_id: user.id,
+          user_id: user?.id ?? null,
+          customer_name: form.full_name,
           status: 'pending',
           payment_method: paymentMethod,
-          payment_status: paymentMethod === 'cod' ? 'pending' : 'pending',
+          payment_status: 'pending',
           transaction_id: transactionId || null,
           total: total,
           delivery_charge: DELIVERY_CHARGE,
@@ -76,15 +94,20 @@ export default function CheckoutPage() {
         price: item.product!.discount_price ?? item.product!.price,
       }))
 
-      await supabase.from('order_items').insert(orderItems)
+      const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
+      if (itemsError) throw itemsError
+
+      // Mark as placed BEFORE clearing cart to prevent redirect guard
+      orderJustPlaced.current = true
 
       // Clear cart
       await clearCart()
 
       toast.success('Order placed successfully! 🎉')
       navigate(`/order-success/${order.id}`)
-    } catch {
-      toast.error('Failed to place order. Please try again.')
+    } catch (err: any) {
+      console.error('Order error:', err)
+      toast.error(`Failed to place order: ${err.message || 'Unknown error'}`)
     } finally {
       setLoading(false)
     }
@@ -94,12 +117,13 @@ export default function CheckoutPage() {
     setForm(f => ({ ...f, [key]: e.target.value }))
 
   const paymentOptions: { value: PaymentMethod; label: string; icon: string; desc: string }[] = [
-    { value: 'cod', label: 'Cash on Delivery', icon: '💵', desc: 'Pay when you receive your order' },
-    { value: 'bkash', label: 'bKash', icon: '📱', desc: 'Send to 01XXXXXXXXX · Personal' },
-    { value: 'nagad', label: 'Nagad', icon: '💳', desc: 'Send to 01XXXXXXXXX · Personal' },
+    { value: 'cod',   label: 'Cash on Delivery', icon: '💵', desc: 'Pay when you receive your order' },
+    { value: 'bkash', label: 'bKash',            icon: '📱', desc: `Send to ${bkashNumber} · Personal` },
+    { value: 'nagad', label: 'Nagad',            icon: '💳', desc: `Send to ${nagadNumber} · Personal` },
   ]
 
-  if (items.length === 0) {
+  // Only redirect to cart if truly empty AND order hasn't just been placed
+  if (items.length === 0 && !orderJustPlaced.current) {
     navigate('/cart')
     return null
   }
@@ -107,11 +131,21 @@ export default function CheckoutPage() {
   return (
     <>
       <Helmet>
-        <title>Checkout — AtikTech</title>
+        <title>Checkout — Atik Technology</title>
       </Helmet>
 
       <div className="container-wide py-10">
         <h1 className="text-2xl font-display font-bold text-white mb-8">Checkout</h1>
+
+        {!user && (
+          <div className="mb-6 bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 flex items-center gap-3">
+            <span className="text-blue-400 text-xl">ℹ️</span>
+            <p className="text-sm text-blue-200">
+              You're ordering as a <strong>guest</strong>. Save your Order ID after checkout to track your order.{' '}
+              <a href="/login" className="underline hover:text-white">Sign in</a> to manage orders easily.
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="grid lg:grid-cols-5 gap-8">
@@ -155,6 +189,39 @@ export default function CheckoutPage() {
                   />
                   {errors.address && <p className="text-xs text-red-400">{errors.address}</p>}
                 </div>
+
+                {/* Delivery Zone */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-slate-300 flex items-center gap-1.5">
+                    <span>Delivery Zone</span>
+                    <span className="text-xs text-blue-400 font-normal">(affects delivery charge)</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {([
+                      { key: 'dhaka',   label: '📍 Inside Dhaka',   charge: chargeDhaka },
+                      { key: 'outside', label: '🚚 Outside Dhaka',  charge: chargeOutside },
+                    ] as const).map(zone => (
+                      <button
+                        key={zone.key}
+                        type="button"
+                        onClick={() => setDeliveryZone(zone.key)}
+                        className={cn(
+                          'flex flex-col items-start p-3.5 rounded-xl border-2 text-left transition-all',
+                          deliveryZone === zone.key
+                            ? 'border-blue-500 bg-blue-500/10'
+                            : 'border-slate-700 hover:border-slate-500 bg-slate-800/30'
+                        )}
+                      >
+                        <span className="text-sm font-medium text-white">{zone.label}</span>
+                        <span className={cn(
+                          'text-xs font-semibold mt-0.5',
+                          deliveryZone === zone.key ? 'text-blue-400' : 'text-slate-400'
+                        )}>৳{zone.charge} delivery charge</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-slate-300">Order Notes <span className="text-slate-500">(optional)</span></label>
                   <textarea
@@ -207,9 +274,12 @@ export default function CheckoutPage() {
                 {/* Transaction ID for bKash / Nagad */}
                 {(paymentMethod === 'bkash' || paymentMethod === 'nagad') && (
                   <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 space-y-3">
-                    <p className="text-sm text-yellow-200">
+                  <p className="text-sm text-yellow-200">
                       <strong>Instructions:</strong> Send {formatPrice(total + DELIVERY_CHARGE)} to{' '}
-                      <span className="font-mono font-bold">01XXXXXXXXX</span> ({paymentMethod === 'bkash' ? 'bKash' : 'Nagad'} · Personal).
+                      <span className="font-mono font-bold">
+                        {paymentMethod === 'bkash' ? bkashNumber : nagadNumber}
+                      </span>{' '}
+                      ({paymentMethod === 'bkash' ? 'bKash' : 'Nagad'} · Personal).
                       Then enter the Transaction ID below.
                     </p>
                     <Input
@@ -264,7 +334,12 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">Delivery</span>
-                    <span className="text-slate-200">{formatPrice(DELIVERY_CHARGE)}</span>
+                    <div className="text-right">
+                      <span className="text-slate-200">{formatPrice(DELIVERY_CHARGE)}</span>
+                      <p className="text-xs text-slate-500">
+                        {deliveryZone === 'dhaka' ? '📍 Inside Dhaka' : '🚚 Outside Dhaka'}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex justify-between font-semibold pt-2 border-t border-slate-700">
                     <span className="text-white">Total</span>
@@ -281,5 +356,25 @@ export default function CheckoutPage() {
         </form>
       </div>
     </>
+  )
+}
+
+import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
+
+function ErrorFallback({ error }: FallbackProps) {
+  return (
+    <div className="max-w-lg mx-auto px-4 py-24 text-center">
+      <div className="text-6xl mb-4">🚨</div>
+      <h1 className="text-2xl font-display font-bold text-red-500 mb-3">Checkout Page Error</h1>
+      <p className="text-slate-400 mb-6 font-mono text-sm break-all">{(error as any)?.message || 'Something went wrong'}</p>
+    </div>
+  )
+}
+
+export default function CheckoutPage() {
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <CheckoutPageContent />
+    </ErrorBoundary>
   )
 }

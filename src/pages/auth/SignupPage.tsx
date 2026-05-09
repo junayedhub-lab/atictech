@@ -6,6 +6,7 @@ import { Helmet } from 'react-helmet-async'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import toast from 'react-hot-toast'
+import logo from '@/assets/logo.png'
 
 export default function SignupPage() {
   const { signUp } = useAuth()
@@ -45,7 +46,7 @@ export default function SignupPage() {
 
   return (
     <>
-      <Helmet><title>Create Account — AtikTech</title></Helmet>
+      <Helmet><title>Create Account — Atik Technology</title></Helmet>
       <div className="min-h-screen flex items-center justify-center px-4 py-16 bg-slate-950">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl" />
@@ -55,13 +56,11 @@ export default function SignupPage() {
         <div className="relative w-full max-w-md animate-fade-in">
           <div className="text-center mb-8">
             <Link to="/" className="inline-flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-orange-500 rounded-xl flex items-center justify-center">
-                <span className="text-white font-black text-lg">A</span>
-              </div>
-              <span className="font-display font-bold text-xl text-white">Atik<span className="text-blue-400">Tech</span></span>
+              <img src={logo} alt="Atik Technology" className="w-10 h-10 object-contain" />
+              <span className="font-display font-bold text-xl text-white">Atik <span className="text-blue-400">Technology</span></span>
             </Link>
             <h1 className="text-2xl font-display font-bold text-white mt-6 mb-1">Create account</h1>
-            <p className="text-slate-400 text-sm">Join AtikTech and start shopping</p>
+            <p className="text-slate-400 text-sm">Join Atik Technology and start shopping</p>
           </div>
 
           <div className="glass bg-slate-900/60 border border-slate-700/50 rounded-2xl p-8 shadow-2xl shadow-black/40">
